@@ -103,9 +103,9 @@ void InputReader::ParseLine(std::string_view line) {
 
 void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
     for (const CommandDescription &comand : commands_) {
-        if (comand.command == BUS_KEY) {
+        if (comand.command == Bus().key) {
             catalogue.AddBus(comand.id, ParseRoute(comand.description));
-        } else if (comand.command == STOP_KEY) {
+        } else if (comand.command == Stop().key) {
             catalogue.AddStop(comand.id, ParseCoordinates(comand.description));
         } 
         else {
