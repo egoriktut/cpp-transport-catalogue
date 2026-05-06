@@ -19,24 +19,33 @@ struct Stop {
     const static constexpr std::string_view key = "Stop";
     std::string_view name;
     Coordinates coordinates;
-    std::unordered_set<Bus*> buses;
 };
 
 struct Bus {
     const static constexpr std::string_view key = "Bus";
     std::string_view id;
-    std::vector<Stop*> stops;
-    std::optional<double> route_distance;
+    std::vector<const Stop*> stops;
+    double route_distance = .0;
+    size_t unique_stops = 0;
+    void ComputeRouteDistance();
+    void ComputeUniqueStops();
+};
 
-    double GetDistance();
+struct BusView {
+    BusView(const Bus* bus);
+    
+    const std::string stops_on_route;
+    const std::string unique_stops;
+    const std::string route_distance;
 };
 
 class TransportCatalogue {
 private:
     std::unordered_set<std::string> unique_names_;
-    // Не вижу смысла в deque, если можно хранить удобно в мапах 
+
     std::unordered_map<std::string_view, Stop> stops_;
-    std::unordered_map<std::string_view, Bus> buses_;
+    std::unordered_map<std::string_view, Bus> buses_;  
+    std::unordered_map<std::string_view, std::unordered_set<const Bus*>> stop_buses_;
 
 private:
     const std::string_view GetStoredString(std::string_view name);
@@ -46,9 +55,13 @@ public:
     TransportCatalogue();
     ~TransportCatalogue();
 
+    void ComputeBusesInfo();
+
     void AddStop(std::string_view name, Coordinates coordinates);
-    Stop* FindStop(std::string_view name);
+    const Stop* FindStop(std::string_view name);
+    std::vector<const Bus*> GetStopBuses(const Stop* stop);
 
     void AddBus(std::string_view id, const std::vector<std::string_view>& route);
-    Bus* FindBus(std::string_view id);
+    const Bus* FindBus(std::string_view id);
+    const BusView GetBusInfo(const Bus* bus);
 };

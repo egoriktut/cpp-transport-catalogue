@@ -112,4 +112,5 @@ void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) 
             throw std::runtime_error("Invalid args");
         }
     }
+    catalogue.ComputeBusesInfo();
 }

@@ -1,7 +1,6 @@
 #include "stat_reader.h"
 #include "transport_catalogue.h"
 #include <algorithm>
-#include <vector>
 
 using namespace std;
 
@@ -13,53 +12,51 @@ string Success(string_view key, string_view name, string_view info) {
     return string(key) + " " + string(name) + ": " + string(info) + "\n";
 }
 
-const string FormatStopInfo(Stop* stop) {
-    if (stop->buses.empty()) {
+const string FormatStopInfo(TransportCatalogue& tansport_catalogue, const Stop* const stop) {
+    vector<const Bus*> buses = tansport_catalogue.GetStopBuses(stop);
+    if (buses.empty()) {
         return "no buses";
     }
-    string buses = "buses ";
-    vector<Bus*> sorted_buses(stop->buses.begin(), stop->buses.end());
-    sort(sorted_buses.begin(), sorted_buses.end(), [](Bus* bus1, Bus* bus2) {
+    string buses_string = "buses ";
+    sort(buses.begin(), buses.end(), [](const Bus* bus1, const Bus* bus2) {
         return bus1->id < bus2->id;
     });
-    for (const Bus* bus : sorted_buses) {
-        buses += string(bus->id) + " ";
+    for (const Bus* bus : buses) {
+        buses_string += string(bus->id) + " ";
     }
-    return buses;
+    return buses_string;
 }
 
 const string GetStopInfo(TransportCatalogue& tansport_catalogue, string_view stop_name) {
-    Stop* stop = tansport_catalogue.FindStop(stop_name);
-
+    const Stop* stop = tansport_catalogue.FindStop(stop_name);
     return (
         stop == nullptr 
         ? 
         NotFound(Stop().key, stop_name)
         :
-        Success(Stop().key, stop_name, FormatStopInfo(stop))
+        Success(Stop().key, stop_name, FormatStopInfo(tansport_catalogue, stop))
     );
 }
 
-const string FormatRouteInfo(Bus* bus) {
-    unordered_set<Stop*> unique_stops(bus->stops.begin(), bus->stops.end());
-    
+const string FormatRouteInfo(TransportCatalogue& tansport_catalogue, const Bus* bus) {
+    const BusView bus_view = tansport_catalogue.GetBusInfo(bus);
     return (
-        to_string(bus->stops.size()) + " stops on route, " + 
-        to_string(unique_stops.size()) + " unique stops, " + 
-        to_string(bus->GetDistance()) + " route length"
+        bus_view.stops_on_route + " stops on route, " + 
+        bus_view.unique_stops + " unique stops, " + 
+        bus_view.route_distance + " route length"
     );
 }
 
 
 const string GetBusInfo(TransportCatalogue& tansport_catalogue, string_view bus_id) {
-    Bus* bus = tansport_catalogue.FindBus(bus_id);
+    const Bus* bus = tansport_catalogue.FindBus(bus_id);
 
     return (
         bus == nullptr 
         ? 
         NotFound(Bus().key, bus_id)
         :
-        Success(Bus().key, bus_id, FormatRouteInfo(bus))
+        Success(Bus().key, bus_id, FormatRouteInfo(tansport_catalogue, bus))
     );
 }
 

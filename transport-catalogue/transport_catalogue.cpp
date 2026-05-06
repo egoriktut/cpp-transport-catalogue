@@ -1,20 +1,27 @@
 #include "transport_catalogue.h"
+#include <string>
 
 using namespace std;
 
 // Bus
-double Bus::GetDistance() {
-    if (!route_distance.has_value()) {
-        double distance_ = 0.0;
-        for (size_t i = 1; i < stops.size(); ++i) {
-            const Stop& from = *stops[i - 1];
-            const Stop& to = *stops[i];
-            distance_ += ComputeDistance(from.coordinates, to.coordinates);
-        }
-        route_distance = distance_;
+void Bus::ComputeRouteDistance() {
+    for (size_t i = 1; i < stops.size(); ++i) {
+        const Stop& from = *stops[i - 1];
+        const Stop& to = *stops[i];
+        route_distance += ComputeDistance(from.coordinates, to.coordinates);
     }
-    return route_distance.value();
 }
+
+void Bus::ComputeUniqueStops() {
+    unordered_set<const Stop*> unique_stops_(stops.begin(), stops.end()); 
+    unique_stops = unique_stops_.size();
+}
+
+BusView::BusView(const Bus* const bus)
+    : stops_on_route(to_string(bus->stops.size()))
+    , unique_stops(to_string(bus->unique_stops))
+    , route_distance(to_string(bus->route_distance))
+{}
 
 // TransportCatalogue
 // Private
@@ -26,6 +33,13 @@ const string_view TransportCatalogue::GetStoredString(string_view name) {
 // Public
 TransportCatalogue::TransportCatalogue() {}
 TransportCatalogue::~TransportCatalogue() {}
+
+void TransportCatalogue::ComputeBusesInfo() {
+    for (auto &[bus_id, bus] : buses_) {
+        bus.ComputeRouteDistance();
+        bus.ComputeUniqueStops();
+    }
+}
 
 void TransportCatalogue::AddStop(string_view name, Coordinates coordinates) {
     string_view stored_name = GetStoredString(name);
@@ -42,10 +56,17 @@ void TransportCatalogue::AddStop(string_view name, Coordinates coordinates) {
     stops_.try_emplace(stored_name, std::move(stop));
 }
 
-Stop* TransportCatalogue::FindStop(string_view name) {
+const Stop* TransportCatalogue::FindStop(string_view name) {
     name = GetStoredString(name);
     auto it = stops_.find(name);
     return it != stops_.end() ? &it->second : nullptr;
+}
+vector<const Bus*> TransportCatalogue::GetStopBuses(const Stop* const stop) {
+    auto it = stop_buses_.find(stop->name);
+    if (it == stop_buses_.end()) {
+        return {};
+    }
+    return {it->second.begin(), it->second.end()};
 }
 
 void TransportCatalogue::AddBus(string_view id, const vector<string_view>& route) {
@@ -68,14 +89,18 @@ void TransportCatalogue::AddBus(string_view id, const vector<string_view>& route
     }
     buses_.try_emplace(stored_id, std::move(bus));
     
-    Bus* bus_ptr = &buses_.at(stored_id);
-    for (Stop* stop : bus_ptr->stops) {
-        stop->buses.insert(bus_ptr);
+    const Bus* bus_ptr = &buses_.at(stored_id);
+    for (const Stop* stop : bus_ptr->stops) {
+        stop_buses_[stop->name].insert(bus_ptr);
     }
 }
 
-Bus* TransportCatalogue::FindBus(string_view id) {
+const Bus* TransportCatalogue::FindBus(string_view id) {
     id = GetStoredString(id);
     auto it = buses_.find(id);
     return it != buses_.end() ? &it->second : nullptr;
+}
+
+const BusView TransportCatalogue::GetBusInfo(const Bus* const bus) {
+    return BusView(bus);
 }
