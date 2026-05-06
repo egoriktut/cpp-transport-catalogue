@@ -1,6 +1,8 @@
 #include "stat_reader.h"
 #include "transport_catalogue.h"
 #include <algorithm>
+#include <string>
+#include <unordered_set>
 
 using namespace std;
 
@@ -13,10 +15,12 @@ string Success(string_view key, string_view name, string_view info) {
 }
 
 const string FormatStopInfo(TransportCatalogue& tansport_catalogue, const Stop* const stop) {
-    vector<const Bus*> buses = tansport_catalogue.GetStopBuses(stop);
-    if (buses.empty()) {
+    unordered_set<const Bus*> buses_set = tansport_catalogue.GetStopBuses(stop);
+    if (buses_set.empty()) {
         return "no buses";
     }
+
+    vector<const Bus*> buses(buses_set.begin(), buses_set.end());
     string buses_string = "buses ";
     sort(buses.begin(), buses.end(), [](const Bus* bus1, const Bus* bus2) {
         return bus1->id < bus2->id;
@@ -41,9 +45,9 @@ const string GetStopInfo(TransportCatalogue& tansport_catalogue, string_view sto
 const string FormatRouteInfo(TransportCatalogue& tansport_catalogue, const Bus* bus) {
     const BusView bus_view = tansport_catalogue.GetBusInfo(bus);
     return (
-        bus_view.stops_on_route + " stops on route, " + 
-        bus_view.unique_stops + " unique stops, " + 
-        bus_view.route_distance + " route length"
+        to_string(bus_view.stops_on_route) + " stops on route, " + 
+        to_string(bus_view.unique_stops) + " unique stops, " + 
+        to_string(bus_view.route_distance) + " route length"
     );
 }
 
