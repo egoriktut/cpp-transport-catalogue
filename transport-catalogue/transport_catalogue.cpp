@@ -1,5 +1,7 @@
 #include "transport_catalogue.h"
+#include "geo.h"
 #include <string>
+#include <string_view>
 
 using namespace std;
 
@@ -15,14 +17,36 @@ const string_view TransportCatalogue::GetStoredBusString(string_view name) {
     return string_view(*it);
 }
 
+const string_view TransportCatalogue::GetStoredStopToStopString(string_view start, string_view end) {
+    string key = string(start) + "_" + string(end);
+    auto [it, inserted] = unique_stop_to_stop_names_.emplace(std::move(key));
+    return *it;
+}
+
 void TransportCatalogue::ComputeRouteDistance(Route* route) {
     double distance = .0;
+    double real_distance = .0;
     for (size_t i = 1; i < route->stops.size(); ++i) {
         const Stop& from = *route->stops[i - 1];
         const Stop& to = *route->stops[i];
         distance += ComputeDistance(from.coordinates, to.coordinates);
+
+        string_view stop_to_stop_key = GetStoredStopToStopString(from.name, to.name);
+        auto stop_to_stop_distance = stop_to_stop_.find(stop_to_stop_key);
+        // Если не нашлось реального маршрута в одну сторону, делаем проверку на обратный 
+        stop_to_stop_key = GetStoredStopToStopString(to.name, from.name);
+        stop_to_stop_distance = (
+            stop_to_stop_distance == stop_to_stop_.end() 
+            ? 
+            stop_to_stop_.find(stop_to_stop_key)
+            : 
+            stop_to_stop_distance
+        );
+        
+        real_distance +=  stop_to_stop_distance != stop_to_stop_.end() ? stop_to_stop_distance->second : distance;
     }
-    route->route_distance = distance;
+    route->route_distance = real_distance;
+    route->curvature = real_distance / distance;
 }
 
 void TransportCatalogue::ComputeUniqueStops(Route* route) {
@@ -34,18 +58,23 @@ void TransportCatalogue::ComputeUniqueStops(Route* route) {
 TransportCatalogue::TransportCatalogue() {}
 TransportCatalogue::~TransportCatalogue() {}
 
-void TransportCatalogue::AddStop(string_view name, Coordinates coordinates) {
+void TransportCatalogue::AddStop(string_view name, Distance distance) {
     string_view stored_name = GetStoredStopString(name);
     
+    for (const auto &[stop_name, real_distance] : distance.real_distance) {
+        string_view stop_to_stop_name = GetStoredStopToStopString(stored_name, stop_name);
+        stop_to_stop_.try_emplace(stop_to_stop_name, real_distance);
+    }
+
     auto it = stops_.find(stored_name);
     if (it != stops_.end()) {
-        it->second.coordinates = coordinates;
+        it->second.coordinates = distance.coordinates;
         return;
     }
     
     Stop stop;
     stop.name = string(stored_name);
-    stop.coordinates = coordinates;
+    stop.coordinates = distance.coordinates;
     stops_.try_emplace(stored_name, std::move(stop));
 }
 
@@ -75,7 +104,7 @@ void TransportCatalogue::AddBus(string_view id, const vector<string_view>& route
         
         // Если остановка еще не добавлена, создаем ее для валидного указателя
         if (stops_.find(stored_stop) == stops_.end()) {
-            AddStop(stored_stop, {0.0, 0.0});
+            AddStop(stored_stop, {{}, {0.0, 0.0}});
         }
         
         Stop* stop_ptr = &stops_.at(stored_stop);

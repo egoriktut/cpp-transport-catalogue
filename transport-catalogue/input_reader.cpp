@@ -1,28 +1,9 @@
 #include "input_reader.h"
+#include "geo.h"
 
 #include <cassert>
 #include <iterator>
-
-/**
- * Парсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
- */
-Coordinates ParseCoordinates(std::string_view str) {
-    static const double nan = std::nan("");
-
-    auto not_space = str.find_first_not_of(' ');
-    auto comma = str.find(',');
-
-    if (comma == str.npos) {
-        return {nan, nan};
-    }
-
-    auto not_space2 = str.find_first_not_of(' ', comma + 1);
-
-    double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
-    double lng = std::stod(std::string(str.substr(not_space2)));
-
-    return {lat, lng};
-}
+#include <vector>
 
 /**
  * Удаляет пробелы в начале и конце строки
@@ -54,6 +35,48 @@ std::vector<std::string_view> Split(std::string_view string, char delim) {
     }
 
     return result;
+}
+
+/**
+ * Парсит строку вида "10.123,  -30.1837" и возвращает пару координат (широта, долгота)
+ */
+Coordinates ParseCoordinates(std::string_view str) {
+    static const double nan = std::nan("");
+
+    auto not_space = str.find_first_not_of(' ');
+    auto comma = str.find(',');
+
+    if (comma == str.npos) {
+        return {nan, nan};
+    }
+
+    auto not_space2 = str.find_first_not_of(' ', comma + 1);
+
+    double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
+    double lng = std::stod(std::string(str.substr(not_space2)));
+
+    return {lat, lng};
+}
+
+/**
+ * Парсит строку вида "55.611087, 37.20829, 9900m to Rasskazovka, 100m to Marushkino" и возвращает пару (название ост, расстояние)
+ */
+std::vector<std::pair<std::string, unsigned>> ParseRealDistance(std::string_view str) {
+    std::vector<std::string_view> stops_distance = Split(str, ',');
+    std::vector<std::pair<std::string, unsigned>> real_distance;
+
+    for (auto it = stops_distance.begin() + 2; it != stops_distance.end(); ++it) {
+        auto& part = *it;
+        int dist = std::stoi(std::string(part.substr(0, part.find('m'))));
+        std::string name(part.substr(part.find("to") + 3));
+        real_distance.push_back({name, dist});
+    }
+
+    return real_distance;
+}
+
+Distance ParseStop(std::string_view str) {
+    return {ParseRealDistance(str), ParseCoordinates(str)}; 
 }
 
 /**
@@ -106,7 +129,7 @@ void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) 
         if (comand.command == Bus().key) {
             catalogue.AddBus(comand.id, ParseRoute(comand.description));
         } else if (comand.command == Stop().key) {
-            catalogue.AddStop(comand.id, ParseCoordinates(comand.description));
+            catalogue.AddStop(comand.id, ParseStop(comand.description));
         } 
         else {
             throw std::runtime_error("Invalid args");

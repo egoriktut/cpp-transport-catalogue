@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cmath>
+#include <string>
+#include <utility>
+#include <vector>
 
 struct Coordinates {
     double lat;
@@ -11,6 +14,11 @@ struct Coordinates {
     bool operator!=(const Coordinates& other) const {
         return !(*this == other);
     }
+};
+
+struct Distance {
+    std::vector<std::pair<std::string, unsigned>> real_distance;
+    Coordinates coordinates;
 };
 
 inline double ComputeDistance(Coordinates from, Coordinates to) {

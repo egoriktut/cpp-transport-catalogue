@@ -47,7 +47,8 @@ const string FormatRouteInfo(TransportCatalogue& transport_catalogue, const Bus*
     return (
         to_string(route->stops_on_route.value()) + " stops on route, " + 
         to_string(route->unique_stops.value()) + " unique stops, " + 
-        to_string(route->route_distance.value()) + " route length"
+        to_string(route->route_distance.value()) + " route length, " +
+        to_string(route->curvature.value()) + " curvature"
     );
 }
 

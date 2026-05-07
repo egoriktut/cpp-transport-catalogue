@@ -23,6 +23,7 @@ struct Stop {
 struct  Route {
     std::vector<const Stop*> stops;
     std::optional<double> route_distance;
+    std::optional<double> curvature;
     std::optional<size_t> unique_stops;
     std::optional<size_t> stops_on_route;
 };
@@ -37,15 +38,18 @@ struct Bus {
 class TransportCatalogue {
 private:
     std::unordered_set<std::string> unique_stops_names_;
+    std::unordered_set<std::string> unique_stop_to_stop_names_;
     std::unordered_set<std::string> unique_buses_names_;
 
     std::unordered_map<std::string_view, Stop> stops_;
     std::unordered_map<std::string_view, Bus> buses_;  
+    std::unordered_map<std::string_view, unsigned> stop_to_stop_;
     std::unordered_map<std::string_view, std::unordered_set<const Bus*>> stop_buses_;
 
 private:
     const std::string_view GetStoredStopString(std::string_view name);
     const std::string_view GetStoredBusString(std::string_view name);
+    const std::string_view GetStoredStopToStopString(std::string_view start, std::string_view end);
     void ComputeRouteDistance(Route* route);
     void ComputeUniqueStops(Route* route);
 
@@ -54,7 +58,7 @@ public:
     TransportCatalogue();
     ~TransportCatalogue();
 
-    void AddStop(std::string_view name, Coordinates coordinates);
+    void AddStop(std::string_view name, Distance distance);
     const Stop* FindStop(std::string_view name);
     const std::unordered_set<const Bus*> GetStopBuses(const Stop* stop);
 
