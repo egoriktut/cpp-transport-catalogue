@@ -126,13 +126,13 @@ void InputReader::ParseLine(std::string_view line) {
 
 void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
     for (const CommandDescription &comand : commands_) {
-        if (comand.command == Bus().key) {
-            catalogue.AddBus(comand.id, ParseRoute(comand.description));
-        } else if (comand.command == Stop().key) {
+        if (comand.command == Stop().key) {
             catalogue.AddStop(comand.id, ParseStop(comand.description));
         } 
-        else {
-            throw std::runtime_error("Invalid args");
+    }
+    for (const CommandDescription &comand : commands_) {
+        if (comand.command == Bus().key) {
+            catalogue.AddBus(comand.id, ParseRoute(comand.description));
         }
     }
 }

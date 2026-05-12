@@ -43,12 +43,12 @@ const string GetStopInfo(TransportCatalogue& transport_catalogue, string_view st
 }
 
 const string FormatRouteInfo(TransportCatalogue& transport_catalogue, const Bus* bus) {
-    const Route* route = transport_catalogue.GetRoute(bus->id);
+    const Route route = transport_catalogue.GetRoute(bus->id);
     return (
-        to_string(route->stops_on_route.value()) + " stops on route, " + 
-        to_string(route->unique_stops.value()) + " unique stops, " + 
-        to_string(route->route_distance.value()) + " route length, " +
-        to_string(route->curvature.value()) + " curvature"
+        to_string(route.stops_on_route) + " stops on route, " + 
+        to_string(route.unique_stops) + " unique stops, " + 
+        to_string(route.route_distance) + " route length, " +
+        to_string(route.curvature) + " curvature"
     );
 }
 
