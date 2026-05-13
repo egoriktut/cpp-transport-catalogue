@@ -42,10 +42,6 @@ struct StopPairHash {
 
 class TransportCatalogue {
 private:
-    /*
-    я понял наконец то почему вы предлагали деки, 
-    с ними правда удобней, если приводить к такой структуре класс :)
-    */
     std::deque<Stop> stops_storage_;
     std::deque<Bus> bus_storage_;
     std::unordered_map<std::string_view, Stop*> stops_;
@@ -62,10 +58,11 @@ public:
     TransportCatalogue();
     ~TransportCatalogue();
 
+    void SetDistanceToStop(std::string_view name, const std::vector<std::pair<std::string, unsigned>>& distance);
     void SetDistance(std::string_view from, std::string_view to, double distance);
-    double GetDistance(std::string_view from, std::string_view to, double default_distance);
+    std::optional<double> GetDistance(std::string_view from, std::string_view to);
 
-    void AddStop(std::string_view name, Distance distance);
+    void AddStop(std::string_view name, Coordinates coordinates);
     const Stop* FindStop(std::string_view name);
     const std::unordered_set<const Bus*> GetStopBuses(const Stop* stop);
 

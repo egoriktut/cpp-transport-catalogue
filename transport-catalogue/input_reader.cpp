@@ -127,12 +127,17 @@ void InputReader::ParseLine(std::string_view line) {
 void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
     for (const CommandDescription &comand : commands_) {
         if (comand.command == Stop().key) {
-            catalogue.AddStop(comand.id, ParseStop(comand.description));
+            catalogue.AddStop(comand.id, ParseStop(comand.description).coordinates);
         } 
     }
     for (const CommandDescription &comand : commands_) {
         if (comand.command == Bus().key) {
             catalogue.AddBus(comand.id, ParseRoute(comand.description));
         }
+    }
+    for (const CommandDescription &comand : commands_) {
+        if (comand.command == Stop().key) {
+            catalogue.SetDistanceToStop(comand.id, ParseStop(comand.description).real_distance);
+        } 
     }
 }
