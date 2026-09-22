@@ -11,48 +11,24 @@
 #include <vector>
 #include <iostream>
 #include <set>
+
+#include "domain.h"
 #include "geo.h"
-
-
-struct Stop {
-    const static constexpr std::string_view key = "Stop";
-    std::string name;
-    Coordinates coordinates;
-};
-
-struct  Route {
-    double route_distance;
-    double curvature;
-    size_t unique_stops;
-    size_t stops_on_route;
-};
-
-struct Bus {
-    const static constexpr std::string_view key = "Bus";
-    std::string id;
-    std::vector<const Stop*> stops;
-};
-
-struct StopPairHash {
-    size_t operator()(const std::pair<const Stop*, const Stop*>& p) const {
-        return std::hash<const void*>{}(p.first) ^ (std::hash<const void*>{}(p.second) << 1);
-    }
-};
 
 
 class TransportCatalogue {
 private:
-    std::deque<Stop> stops_storage_;
-    std::deque<Bus> bus_storage_;
-    std::unordered_map<std::string_view, const Stop*> stops_;
-    std::unordered_map<std::string_view, const Bus*> buses_;
+    std::deque<domain::Stop> stops_storage_;
+    std::deque<domain::Bus> bus_storage_;
+    std::unordered_map<std::string_view, const domain::Stop*> stops_;
+    std::unordered_map<std::string_view, const domain::Bus*> buses_;
 
-    std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash> distances_;
-    std::unordered_map<std::string_view, std::unordered_set<const Bus*>> stop_buses_;
+    std::unordered_map<std::pair<const domain::Stop*, const domain::Stop*>, double, domain::StopPairHash> distances_;
+    std::unordered_map<std::string_view, std::unordered_set<const domain::Bus*>> stop_buses_;
 
 private:
-    void ComputeRouteDistance(const Bus* bus, Route& route);
-    void ComputeUniqueStops(const Bus* bus, Route& route);
+    void ComputeRouteDistance(const domain::Bus* bus, domain::Route& route) const;
+    void ComputeUniqueStops(const domain::Bus* bus, domain::Route& route) const;
 
 public:
     TransportCatalogue();
@@ -60,13 +36,19 @@ public:
 
     void SetDistanceToStop(std::string_view name, const std::vector<std::pair<std::string, unsigned>>& distance);
     void SetDistance(std::string_view from, std::string_view to, double distance);
-    std::optional<double> GetDistance(std::string_view from, std::string_view to);
+    std::optional<double> GetDistance(std::string_view from, std::string_view to) const;
 
-    void AddStop(std::string_view name, Coordinates coordinates);
-    const Stop* FindStop(std::string_view name);
-    const std::unordered_set<const Bus*> GetStopBuses(const Stop* stop);
+    void AddStop(std::string_view name, geo::Coordinates coordinates);
+    const domain::Stop* FindStop(std::string_view name) const;
+    const std::unordered_set<const domain::Bus*>& GetStopBuses(const domain::Stop* stop) const;
 
-    void AddBus(std::string_view id, const std::vector<std::string_view>& route);
-    const Bus* FindBus(std::string_view id);
-    const Route GetRoute(std::string_view id);
+    void AddBus(std::string_view id,
+                const std::vector<std::string_view>& route,
+                const std::vector<std::string_view>& endpoints,
+                bool is_roundtrip);    const domain::Bus* FindBus(std::string_view id) const;
+    const domain::Route GetRoute(std::string_view id) const;
+
+    const std::unordered_map<std::string_view, const domain::Bus*>& GetAllBuses() const {
+        return buses_;
+    }
 };
