@@ -70,18 +70,13 @@ optional<double> TransportCatalogue::GetDistance(string_view from, string_view t
 }
 
 void TransportCatalogue::AddStop(string_view name, Coordinates coordinates) {
-    auto it = stops_.find(name);
-    if (it != stops_.end()) {
-        it->second->coordinates = coordinates;
-    } else {
-        Stop stop;
-        stop.name = string(name);
-        stop.coordinates = coordinates;
+    Stop stop;
+    stop.name = string(name);
+    stop.coordinates = coordinates;
 
-        stops_storage_.push_back(std::move(stop));
-        const auto& stop_el = &stops_storage_.back();
-        stops_.try_emplace(stop_el->name, stop_el);
-    }
+    stops_storage_.push_back(std::move(stop));
+    const auto& stop_el = &stops_storage_.back();
+    stops_.try_emplace(stop_el->name, stop_el);
 }
 
 const Stop* TransportCatalogue::FindStop(string_view name) {
@@ -112,7 +107,7 @@ void TransportCatalogue::AddBus(string_view id, const vector<string_view>& route
             AddStop(stop_name, {0.0, 0.0});
         }
         
-        Stop* stop_ptr = stops_.at(stop_name);
+        const Stop* stop_ptr = stops_.at(stop_name);
         bus.stops.push_back(stop_ptr);
     }
 

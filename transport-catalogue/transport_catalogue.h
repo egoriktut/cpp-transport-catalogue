@@ -44,8 +44,8 @@ class TransportCatalogue {
 private:
     std::deque<Stop> stops_storage_;
     std::deque<Bus> bus_storage_;
-    std::unordered_map<std::string_view, Stop*> stops_;
-    std::unordered_map<std::string_view, Bus*> buses_;
+    std::unordered_map<std::string_view, const Stop*> stops_;
+    std::unordered_map<std::string_view, const Bus*> buses_;
 
     std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash> distances_;
     std::unordered_map<std::string_view, std::unordered_set<const Bus*>> stop_buses_;
