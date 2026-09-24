@@ -191,13 +191,11 @@ Node JsonReader::MakeStopResponse(const RequestHandler& handler, const Dict& req
     };
 }
 
-Node JsonReader::MakeMapResponse(const renderer::MapRenderer& renderer,
-                                 const TransportCatalogue& catalogue,
-                                 const Dict& request) const {
+Node JsonReader::MakeMapResponse(const RequestHandler& handler, const Dict& request) const {
     const int id = request.at("id").AsInt();
 
     ostringstream svg_out;
-    renderer.Render(catalogue).Render(svg_out);
+    handler.RenderMap().Render(svg_out);
 
     return Dict{
         {"map", svg_out.str()},
@@ -205,10 +203,7 @@ Node JsonReader::MakeMapResponse(const renderer::MapRenderer& renderer,
     };
 }
 
-void JsonReader::ProcessRequests(const RequestHandler& handler,
-                                 const renderer::MapRenderer& renderer,
-                                 const TransportCatalogue& catalogue,
-                                 ostream& output) const {
+void JsonReader::ProcessRequests(const RequestHandler& handler, ostream& output) const {
     Array responses;
     responses.reserve(stat_requests_.size());
 
@@ -221,7 +216,8 @@ void JsonReader::ProcessRequests(const RequestHandler& handler,
         } else if (type == "Stop") {
             responses.push_back(MakeStopResponse(handler, dict));
         } else if (type == "Map") {
-            responses.push_back(MakeMapResponse(renderer, catalogue, dict));
+            
+            responses.push_back(MakeMapResponse(handler, dict));
         }
     }
 

@@ -14,9 +14,9 @@ int main() {
     reader.FillCatalogue(catalogue);
 
     renderer::MapRenderer renderer(reader.ParseRenderSettings());
-    RequestHandler handler(catalogue);
+    RequestHandler handler(catalogue, renderer);
 
-    reader.ProcessRequests(handler, renderer, catalogue, cout);
+    reader.ProcessRequests(handler, cout);
 
     return 0;
 }

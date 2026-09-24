@@ -1,12 +1,15 @@
 #include "request_handler.h"
+#include "map_renderer.h"
 
 #include <cmath>
 
 using namespace std;
 using namespace domain;
 
-RequestHandler::RequestHandler(const TransportCatalogue& db)
-    : db_(db) {
+RequestHandler::RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer)
+    : db_(db)
+    , renderer_(renderer)
+    {
 }
 
 optional<BusStat> RequestHandler::GetBusStat(string_view bus_name) const {
@@ -32,4 +35,8 @@ const unordered_set<const Bus*>* RequestHandler::GetBusesByStop(string_view stop
     }
 
     return &db_.GetStopBuses(stop);
+}
+
+svg::Document RequestHandler::RenderMap() const {
+    return renderer_.Render(db_);
 }

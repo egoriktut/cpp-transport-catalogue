@@ -97,6 +97,29 @@ public:
     svg::Document Render(const TransportCatalogue& catalogue) const;
 
 private:
+    struct RenderContext {
+        svg::Document& doc;
+        const SphereProjector& projector;
+        const std::vector<const domain::Bus*>& buses;
+        const std::vector<const domain::Stop*>& used_stops;
+    };
+
+    void RenderRouteLines(const RenderContext& ctx) const;
+    void RenderRouteNames(const RenderContext& ctx) const;
+    void RenderStopCircles(const RenderContext& ctx) const;
+    void RenderStopNames(const RenderContext& ctx) const;
+
+    const svg::Color& ColorFor(size_t index) const;
+    void AddTextWithUnderlayer(
+        svg::Document& doc,
+        const svg::Point& pos,
+        const svg::Point& offset,
+        int font_size,
+        const std::string& data,
+        const svg::Color& text_color,
+        bool bold
+    ) const;
+
     RenderSettings settings_;
 };
 

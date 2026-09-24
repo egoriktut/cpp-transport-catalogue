@@ -17,10 +17,7 @@ public:
 
     renderer::RenderSettings ParseRenderSettings() const;
 
-    void ProcessRequests(const RequestHandler& handler,
-                         const renderer::MapRenderer& renderer,
-                         const TransportCatalogue& catalogue,
-                         std::ostream& output) const;
+    void ProcessRequests(const RequestHandler& handler, std::ostream& output) const;
 
 private:
     json::Document document_;
@@ -34,7 +31,5 @@ private:
 
     json::Node MakeBusResponse(const RequestHandler& handler, const json::Dict& request) const;
     json::Node MakeStopResponse(const RequestHandler& handler, const json::Dict& request) const;
-    json::Node MakeMapResponse(const renderer::MapRenderer& renderer,
-                               const TransportCatalogue& catalogue,
-                               const json::Dict& request) const;
+    json::Node MakeMapResponse(const RequestHandler& handler, const json::Dict& request) const;
 };
