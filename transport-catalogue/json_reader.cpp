@@ -1,4 +1,5 @@
 #include "json_reader.h"
+#include "json_builder.h"
 
 #include <algorithm>
 #include <sstream>
@@ -145,19 +146,23 @@ Node JsonReader::MakeBusResponse(const RequestHandler& handler, const Dict& requ
 
     const auto bus_stat = handler.GetBusStat(name);
     if (!bus_stat) {
-        return Dict{
-            {"request_id", id},
-            {"error_message", "not found"s}
-        };
+        return Builder{}
+            .StartDict()
+                .Key("request_id").Value(id)
+                .Key("error_message").Value("not found"s)
+            .EndDict()
+            .Build();
     }
 
-    return Dict{
-        {"curvature", bus_stat->curvature},
-        {"request_id", id},
-        {"route_length", bus_stat->route_length},
-        {"stop_count", bus_stat->stop_count},
-        {"unique_stop_count", bus_stat->unique_stop_count}
-    };
+    return Builder{}
+        .StartDict()
+            .Key("curvature").Value(bus_stat->curvature)
+            .Key("request_id").Value(id)
+            .Key("route_length").Value(bus_stat->route_length)
+            .Key("stop_count").Value(bus_stat->stop_count)
+            .Key("unique_stop_count").Value(bus_stat->unique_stop_count)
+        .EndDict()
+        .Build();
 }
 
 Node JsonReader::MakeStopResponse(const RequestHandler& handler, const Dict& request) const {
@@ -166,10 +171,12 @@ Node JsonReader::MakeStopResponse(const RequestHandler& handler, const Dict& req
 
     const auto buses = handler.GetBusesByStop(name);
     if (!buses) {
-        return Dict{
-            {"request_id", id},
-            {"error_message", "not found"s}
-        };
+        return Builder{}
+            .StartDict()
+                .Key("request_id").Value(id)
+                .Key("error_message").Value("not found"s)
+            .EndDict()
+            .Build();
     }
 
     vector<string> bus_names;
@@ -179,16 +186,17 @@ Node JsonReader::MakeStopResponse(const RequestHandler& handler, const Dict& req
     }
     sort(bus_names.begin(), bus_names.end());
 
-    Array buses_array;
-    buses_array.reserve(bus_names.size());
-    for (auto& n : bus_names) {
-        buses_array.push_back(move(n));
+    Builder builder;
+    builder.StartDict()
+        .Key("buses").StartArray();
+    for (const auto& bus_name : bus_names) {
+        builder.Value(bus_name);
     }
+    builder.EndArray()
+        .Key("request_id").Value(id)
+    .EndDict();
 
-    return Dict{
-        {"buses", move(buses_array)},
-        {"request_id", id}
-    };
+    return builder.Build();
 }
 
 Node JsonReader::MakeMapResponse(const RequestHandler& handler, const Dict& request) const {
@@ -197,29 +205,31 @@ Node JsonReader::MakeMapResponse(const RequestHandler& handler, const Dict& requ
     ostringstream svg_out;
     handler.RenderMap().Render(svg_out);
 
-    return Dict{
-        {"map", svg_out.str()},
-        {"request_id", id}
-    };
+    return Builder{}
+        .StartDict()
+            .Key("map").Value(svg_out.str())
+            .Key("request_id").Value(id)
+        .EndDict()
+        .Build();
 }
 
 void JsonReader::ProcessRequests(const RequestHandler& handler, ostream& output) const {
-    Array responses;
-    responses.reserve(stat_requests_.size());
+    Builder builder;
+    builder.StartArray();
 
     for (const auto& request : stat_requests_) {
         const auto& dict = request.AsDict();
         const string type = dict.at("type").AsString();
 
         if (type == "Bus") {
-            responses.push_back(MakeBusResponse(handler, dict));
+            builder.Value(MakeBusResponse(handler, dict).GetValue());
         } else if (type == "Stop") {
-            responses.push_back(MakeStopResponse(handler, dict));
+            builder.Value(MakeStopResponse(handler, dict).GetValue());
         } else if (type == "Map") {
-            
-            responses.push_back(MakeMapResponse(handler, dict));
+            builder.Value(MakeMapResponse(handler, dict).GetValue());
         }
     }
 
-    Print(Document(move(responses)), output);
+    builder.EndArray();
+    Print(Document(builder.Build()), output);
 }

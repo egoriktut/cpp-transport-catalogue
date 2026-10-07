@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <map>
-#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -22,7 +21,9 @@ class Node final
     : private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
 public:
     using variant::variant;
-    using Value = variant;
+	using Value = variant;
+
+    Node(Value value) : variant(std::move(value)) {}
 
     bool IsInt() const {
         return std::holds_alternative<int>(*this);
@@ -57,6 +58,7 @@ public:
         if (!IsBool()) {
             throw std::logic_error("Not a bool"s);
         }
+
         return std::get<bool>(*this);
     }
 
@@ -72,6 +74,7 @@ public:
         if (!IsArray()) {
             throw std::logic_error("Not an array"s);
         }
+
         return std::get<Array>(*this);
     }
 
@@ -83,6 +86,7 @@ public:
         if (!IsString()) {
             throw std::logic_error("Not a string"s);
         }
+
         return std::get<std::string>(*this);
     }
 
@@ -94,6 +98,7 @@ public:
         if (!IsDict()) {
             throw std::logic_error("Not a dict"s);
         }
+
         return std::get<Dict>(*this);
     }
 
@@ -136,6 +141,7 @@ inline bool operator!=(const Document& lhs, const Document& rhs) {
 }
 
 Document Load(std::istream& input);
+
 void Print(const Document& doc, std::ostream& output);
 
 }  // namespace json
