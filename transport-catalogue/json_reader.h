@@ -13,6 +13,8 @@ class JsonReader {
 public:
     explicit JsonReader(std::istream& input);
 
+    domain::RoutingSettings GetRoutingSettings() const { return routing_settings_; }
+
     void FillCatalogue(TransportCatalogue& catalogue) const;
 
     renderer::RenderSettings ParseRenderSettings() const;
@@ -24,6 +26,12 @@ private:
     const json::Array& base_requests_;
     const json::Dict& render_settings_;
     const json::Array& stat_requests_;
+
+    domain::RoutingSettings routing_settings_;
+
+    domain::RoutingSettings ParseRoutingSettings() const;
+    json::Node MakeRouteResponse(const RequestHandler& handler,
+                                 const json::Dict& request) const;
 
     void ParseStop(TransportCatalogue& catalogue, const json::Dict& request) const;
     void ParseBus(TransportCatalogue& catalogue, const json::Dict& request) const;

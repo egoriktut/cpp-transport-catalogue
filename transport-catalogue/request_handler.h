@@ -7,10 +7,13 @@
 #include "domain.h"
 #include "transport_catalogue.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 
 class RequestHandler {
 public:
-    explicit RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer);
+    RequestHandler(const TransportCatalogue& db,
+                   const renderer::MapRenderer& renderer,
+                   const transport_router::TransportRouter& router);
 
     std::optional<domain::BusStat> GetBusStat(std::string_view bus_name) const;
 
@@ -18,7 +21,11 @@ public:
 
     svg::Document RenderMap() const;
 
+    std::optional<domain::RouteResult> GetRoute(
+        std::string_view from, std::string_view to) const;
+
 private:
     const TransportCatalogue& db_;
     const renderer::MapRenderer& renderer_;
+    const transport_router::TransportRouter& router_;
 };

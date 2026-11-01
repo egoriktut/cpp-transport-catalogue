@@ -51,4 +51,8 @@ public:
     const std::unordered_map<std::string_view, const domain::Bus*>& GetAllBuses() const {
         return buses_;
     }
+
+    const std::unordered_map<std::string_view, const domain::Stop*>& GetAllStops() const {
+        return stops_;
+    }
 };

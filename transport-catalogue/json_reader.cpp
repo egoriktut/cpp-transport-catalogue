@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <variant>
 
 using namespace std;
 using namespace json;
@@ -35,11 +36,65 @@ svg::Point ParsePoint(const json::Array& arr) {
 
 }  // namespace
 
+domain::RoutingSettings JsonReader::ParseRoutingSettings() const {
+    domain::RoutingSettings s;
+    const auto& d = document_.GetRoot().AsDict().at("routing_settings").AsDict();
+    s.bus_wait_time = d.at("bus_wait_time").AsInt();
+    s.bus_velocity = d.at("bus_velocity").AsDouble();
+    return s;
+}
+
+Node JsonReader::MakeRouteResponse(const RequestHandler& handler,
+                                   const json::Dict& request) const {
+    const int id = request.at("id").AsInt();
+    const std::string from = request.at("from").AsString();
+    const std::string to   = request.at("to").AsString();
+
+    auto route = handler.GetRoute(from, to);
+    if (!route) {
+        return Builder{}
+            .StartDict()
+                .Key("request_id").Value(id)
+                .Key("error_message").Value("not found"s)
+            .EndDict()
+            .Build();
+    }
+
+    Builder b;
+    b.StartDict()
+        .Key("request_id").Value(id)
+        .Key("total_time").Value(route->total_time)
+        .Key("items").StartArray();
+
+    for (const auto& item : route->items) {
+        if (std::holds_alternative<domain::RouteItemWait>(item)) {
+            const auto& w = std::get<domain::RouteItemWait>(item);
+            b.StartDict()
+                .Key("type").Value("Wait"s)
+                .Key("stop_name").Value(w.stop_name)
+                .Key("time").Value(w.time)
+            .EndDict();
+        } else {
+            const auto& bus = std::get<domain::RouteItemBus>(item);
+            b.StartDict()
+                .Key("type").Value("Bus"s)
+                .Key("bus").Value(bus.bus)
+                .Key("span_count").Value(bus.span_count)
+                .Key("time").Value(bus.time)
+            .EndDict();
+        }
+    }
+    b.EndArray().EndDict();
+    return b.Build();
+}
+
 JsonReader::JsonReader(istream& input)
     : document_(Load(input))
     , base_requests_(document_.GetRoot().AsDict().at("base_requests").AsArray())
     , render_settings_(document_.GetRoot().AsDict().at("render_settings").AsDict())
-    , stat_requests_(document_.GetRoot().AsDict().at("stat_requests").AsArray()) {
+    , stat_requests_(document_.GetRoot().AsDict().at("stat_requests").AsArray())
+{
+    routing_settings_ = ParseRoutingSettings();
 }
 
 void JsonReader::ParseStop(TransportCatalogue& catalogue, const Dict& request) const {
@@ -227,6 +282,8 @@ void JsonReader::ProcessRequests(const RequestHandler& handler, ostream& output)
             builder.Value(MakeStopResponse(handler, dict).GetValue());
         } else if (type == "Map") {
             builder.Value(MakeMapResponse(handler, dict).GetValue());
+        } else if (type == "Route") {
+            builder.Value(MakeRouteResponse(handler, dict).GetValue());
         }
     }
 

@@ -6,9 +6,12 @@
 using namespace std;
 using namespace domain;
 
-RequestHandler::RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer)
+RequestHandler::RequestHandler(const TransportCatalogue& db,
+                               const renderer::MapRenderer& renderer,
+                               const transport_router::TransportRouter& router)
     : db_(db)
     , renderer_(renderer)
+    , router_(router)
     {
 }
 
@@ -35,6 +38,11 @@ const unordered_set<const Bus*>* RequestHandler::GetBusesByStop(string_view stop
     }
 
     return &db_.GetStopBuses(stop);
+}
+
+optional<domain::RouteResult>
+RequestHandler::GetRoute(string_view from, string_view to) const {
+    return router_.GetRouteResult(string(from), string(to));
 }
 
 svg::Document RequestHandler::RenderMap() const {
