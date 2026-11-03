@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+transport_app
+
+# Open test data
+s12_final_opentest/
