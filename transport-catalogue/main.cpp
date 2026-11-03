@@ -14,8 +14,8 @@ int main() {
 
     reader.FillCatalogue(catalogue);
 
-    transport_router::TransportRouter router(reader.GetRoutingSettings());
-    router.BuildGraph(catalogue);
+    transport_router::TransportRouter router(reader.GetRoutingSettings(), catalogue);
+    router.BuildGraph();
 
     renderer::MapRenderer renderer(reader.ParseRenderSettings());
     RequestHandler handler(catalogue, renderer, router);

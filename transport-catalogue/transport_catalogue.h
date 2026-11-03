@@ -45,7 +45,9 @@ public:
     void AddBus(std::string_view id,
                 const std::vector<std::string_view>& route,
                 const std::vector<std::string_view>& endpoints,
-                bool is_roundtrip);    const domain::Bus* FindBus(std::string_view id) const;
+                bool is_roundtrip);
+
+    const domain::Bus* FindBus(std::string_view id) const;
     const domain::Route GetRoute(std::string_view id) const;
 
     const std::unordered_map<std::string_view, const domain::Bus*>& GetAllBuses() const {
@@ -54,5 +56,13 @@ public:
 
     const std::unordered_map<std::string_view, const domain::Stop*>& GetAllStops() const {
         return stops_;
+    }
+
+    const std::deque<domain::Stop>& GetStopsInInsertionOrder() const {
+        return stops_storage_;
+    }
+
+    const std::deque<domain::Bus>& GetBusesInInsertionOrder() const {
+        return bus_storage_;
     }
 };

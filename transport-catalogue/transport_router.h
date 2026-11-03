@@ -16,15 +16,14 @@ namespace transport_router {
 
 class TransportRouter {
 public:
-    TransportRouter() = default;
-    explicit TransportRouter(domain::RoutingSettings settings);
+    TransportRouter(domain::RoutingSettings settings, const TransportCatalogue& catalogue);
 
     void SetSettings(domain::RoutingSettings settings);
 
-    void BuildGraph(const TransportCatalogue& catalogue);
+    void BuildGraph();
 
-    std::optional<domain::RouteResult> GetRouteResult(
-        const std::string& from, const std::string& to) const;
+    std::optional<domain::RouteResult> GetRouteResult(const std::string& from,
+                                                      const std::string& to) const;
 
 private:
     struct EdgeInfo {
@@ -35,11 +34,17 @@ private:
         std::string stop_name;
     };
 
+    void BuildStopVertices();
+    void BuildBusEdges();
+
     domain::RoutingSettings settings_;
-    std::unique_ptr<graph::DirectedWeightedGraph<double>> graph_;
+    const TransportCatalogue& catalogue_;
+
+    graph::DirectedWeightedGraph<double> graph_;
     std::unique_ptr<graph::Router<double>> router_;
 
     std::unordered_map<std::string, std::pair<graph::VertexId, graph::VertexId>> stop_vertices_;
+    std::vector<std::string> ordered_stops_;
 
     std::vector<EdgeInfo> edge_info_;
 };
